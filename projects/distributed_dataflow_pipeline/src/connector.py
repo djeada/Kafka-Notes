@@ -1,9 +1,10 @@
 from kafka import KafkaProducer
-
 import logging
 from kafka.errors import KafkaError
 import time
 import socket
+from multiprocessing import Process
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
