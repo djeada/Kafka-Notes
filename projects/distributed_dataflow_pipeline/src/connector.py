@@ -70,7 +70,7 @@ class DataGeneratorKafkaConnector:
         self.kafka_producer.close()
 
 
-if __name__ == "__main__":
+def start_connector_process():
     data_generator_host = "127.0.0.1"
     data_generator_port = 65432
     kafka_broker = "127.0.0.1:9092"
@@ -80,3 +80,18 @@ if __name__ == "__main__":
         data_generator_host, data_generator_port, kafka_broker, kafka_topic
     )
     connector.listen_to_data_generator()
+
+
+if __name__ == "__main__":
+    # Number of processes to spawn
+    num_processes = 4
+
+    processes = []
+    for _ in range(num_processes):
+        p = Process(target=start_connector_process)
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()
+        
