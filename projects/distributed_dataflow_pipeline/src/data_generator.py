@@ -1,6 +1,6 @@
 import socket
 import time
-
+import threading
 
 class DataGenerator:
     def __init__(
@@ -17,28 +17,32 @@ class DataGenerator:
             s.listen()
             print(f"Data Generator started on {self.host}:{self.port}")
 
-            conn, addr = s.accept()
-            with conn:
+            while True:
+                conn, addr = s.accept()
                 print("Connected by", addr)
-                message_count = 0
-                try:
-                    while True:
-                        if self.num_messages and message_count >= self.num_messages:
-                            break
-                        message = f"This is a mock message from Data Generator {message_count}.\n"
-                        print(message)
-                        conn.sendall(message.encode("utf-8"))
-                        time.sleep(self.message_interval)
-                        message_count += 1
+                client_thread = threading.Thread(target=self.handle_client, args=(conn, addr))
+                client_thread.start()
 
-                    # Add a slight delay after sending the last message.
-                    time.sleep(10)
-                    # Gracefully shutdown the connection.
-                    conn.shutdown(socket.SHUT_WR)
+    def handle_client(self, conn, addr):
+        with conn:
+            message_count = 0
+            try:
+                while True:
+                    if self.num_messages and message_count >= self.num_messages:
+                        break
+                    message = f"This is a mock message from Data Generator {message_count}.\n"
+                    print(message)
+                    conn.sendall(message.encode("utf-8"))
+                    time.sleep(self.message_interval)
+                    message_count += 1
 
-                except socket.error as e:
-                    print(f"Socket error: {e}")
+                # Add a slight delay after sending the last message.
+                time.sleep(10)
+                # Gracefully shutdown the connection.
+                conn.shutdown(socket.SHUT_WR)
 
+            except socket.error as e:
+                print(f"Socket error: {e}")
 
 if __name__ == "__main__":
     # Example usage:
