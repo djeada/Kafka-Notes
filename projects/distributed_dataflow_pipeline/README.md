@@ -1,46 +1,45 @@
-# Simple Dataflow Pipeline
+# Distributed Dataflow Pipeline
 
-This project provides a solution for bridging the gap between the Data Generator messaging system and the Kafka streaming platform. By integrating these systems, we aim to facilitate real-time data processing, ensure efficient storage, and maintain robust logging capabilities.
+The distributed dataflow pipeline, by harnessing the power of multiprocessing, facilitates efficient and parallel processing of vast data streams. With proper configuration and monitoring, it offers a robust solution for high-throughput data scenarios.
 
 ## System Components
 
-### Data Generator Queue and Listener
+### Multiprocessed Data Ingestion
 
-- **Data Generator Message Broker**:
-  - Set up the Data Generator message broker to manage incoming data efficiently.
-  - Designate a specific queue within the Data Generator system dedicated to data ingestion.
-  
-- **Listener Application**:
-  - Develop a custom application that ties to the Data Generator queue, monitoring incoming messages.
-  - The listener's core function is to extract data from the Data Generator queue and relay it to the Kafka producer, setting the stage for the next phase of processing.
+- **Data Ingestor**:
+  - Functions as the primary interface for incoming data streams.
+  - Utilizes multiprocessing to spawn `n` child processes that independently pull data from sources.
 
-### Kafka Integration
+- **Buffer Queue**:
+  - A multiprocessing-safe queue that acts as a temporary storage, absorbing data from the ingestors.
+  - Guarantees thread safety and supports concurrent pushes and pulls from multiple processes.
 
-- **Kafka Producer**:
-  - This component is integrated with the listener application.
-  - Its primary responsibility is to accept data from the Data Generator listener and transmit it to the specified Kafka topic.
-  
-- **Kafka Cluster**:
-  - Represents a distributed system, consisting of several broker nodes, which assures data redundancy, fault-tolerance, and the capability to scale.
-  - Within this cluster are various topics, one of which will be allocated to store messages originating from the Data Generator queue.
+### Multiprocessed Data Processing
 
-- **Kafka Topic**:
-  - A specialized channel within the Kafka cluster where the producer dispatches messages.
-  - This topic functions as the intermediary between the producer and consumers, making certain that data is readily accessible for real-time processing.
+- **Data Processor**:
+  - Leverages multiprocessing to initiate `n` worker processes.
+  - Each worker is responsible for pulling data from the buffer queue, processing it, and then pushing the result to the next phase.
 
-### Data Processing
+- **Intermediate Storage**:
+  - An optional transient storage mechanism (like an in-memory database or a cache) that temporarily holds processed data.
+  - Ensures that the processing components don't become bottlenecks.
 
-- **Kafka Consumer**:
-  - A software entity or service that taps into the Kafka cluster, subscribing to the specific topic containing messages from the Data Generator.
-  - Its role is to retrieve messages from this topic and subject them to the stipulated processing logic.
+### Multiprocessed Data Storage
 
-- **Database Storage**:
-  - Post message retrieval, the Kafka consumer can archive them in a suitable database.
-  - Depending on the data's nature and expected query types, one might opt for a relational, NoSQL, or time-series database.
+- **Data Storage Workers**:
+  - Using multiprocessing, `n` worker processes are launched, each responsible for persistent data storage.
+  - Each worker fetches processed data either from the intermediate storage or directly from the processing queue and persists it to the final database or file storage.
 
-- **Logging**:
-  - Integrated within the Kafka consumer, this mechanism ensures meticulous record-keeping.
-  - Every operational nuance, potential errors, and message specifics are logged, paving the way for streamlined monitoring, debugging, and auditing.
+### Logging and Monitoring
+
+- **Log Aggregator**:
+  - A component that collates logs from all worker processes.
+  - Responsible for centralizing logs and ensuring that they are written to a persistent store or displayed in real-time, aiding in debugging and performance tuning.
+
+- **Metrics Collector**:
+  - Actively monitors each process's health, resource utilization, and other crucial metrics.
+  - Aids in identifying bottlenecks, ensuring efficient resource utilization, and enabling the system's smooth scaling.
+
 
 ```
 +---------------------+      +------------------+      +-----------------+       
