@@ -13,6 +13,8 @@ for message in consumer:
     # using offset and partition
     # ack_message = f"Processed message from partition {message.partition} with offset {message.offset}."
     # producer.send('ack-topic', ack_message)
+    # (Optional) Commit the offset if you want to track your consumer's progress
+    # consumer.commit()
 
 # On the producer side, consume from 'ack-topic' to get acknowledgments
 ack_consumer = KafkaConsumer('ack-topic', bootstrap_servers='localhost:9092')
