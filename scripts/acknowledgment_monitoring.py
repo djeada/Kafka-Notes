@@ -10,6 +10,10 @@ for message in consumer:
     # Send acknowledgment
     producer.send('ack-topic', f"Ack for message {message.value.decode('utf-8')}")
 
+    # using offset and partition
+    # ack_message = f"Processed message from partition {message.partition} with offset {message.offset}."
+    # producer.send('ack-topic', ack_message)
+
 # On the producer side, consume from 'ack-topic' to get acknowledgments
 ack_consumer = KafkaConsumer('ack-topic', bootstrap_servers='localhost:9092')
 for ack in ack_consumer:
