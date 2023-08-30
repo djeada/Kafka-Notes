@@ -21,14 +21,37 @@ def reset_to_timestamp(admin, group, topic, timestamp):
 if __name__ == "__main__":
     admin = KafkaAdminClient(bootstrap_servers='localhost:9092')
 
-    # Provide a basic CLI interface
-    group = input("Enter consumer group name: ")
-    topic = input("Enter topic name: ")
+    # List all consumer groups
+    consumer_groups = admin.list_consumer_groups().keys()
+    print("\nConsumer Groups:")
+    for index, group in enumerate(consumer_groups):
+        print(f"{index + 1}. {group}")
+
+    group = input("Choose a consumer group by number or enter its name: ")
+    if group.isdigit():
+        group = consumer_groups[int(group) - 1]
+        
+    # List all topics
+    topics = admin.list_topics()
+    print("\nTopics:")
+    for index, topic in enumerate(topics):
+        print(f"{index + 1}. {topic}")
+
+    topic = input("Choose a topic by number or enter its name: ")
+    if topic.isdigit():
+        topic = topics[int(topic) - 1]
+
+    # Display offsets for the chosen group and topic
+    print(f"\nCurrent offsets for group '{group}' and topic '{topic}':")
+    offsets = admin.list_consumer_group_offsets(group).items()
+    for tp, offset in offsets:
+        if tp.topic == topic:
+            print(f"Partition {tp.partition}: Offset {offset.offset}")
 
     # NOTE: For simplicity, we're assuming a fixed number of partitions. In a real-world scenario, you'd fetch this dynamically.
-    num_partitions = 1  # Change this to your topic's partition count
+    num_partitions = len([tp for tp, offset in offsets if tp.topic == topic])
 
-    print("Choose offset reset option:")
+    print("\nChoose offset reset option:")
     print("1: Earliest")
     print("2: Latest")
     print("3: Specific Date/Time (format: YYYY-MM-DD HH:MM:SS)")
