@@ -1,58 +1,84 @@
-import time
-from kafka import KafkaConsumer, KafkaError
+from kafka import KafkaAdminClient, KafkaConsumer, TopicPartition
 import matplotlib.pyplot as plt
+import logging
+import time
+from typing import List, Dict
 
-def initialize_consumer(topic_name, bootstrap_servers='localhost:9092'):
-    """Initialize a Kafka consumer."""
+# Configuration
+BROKER = 'localhost:9092'  # Kafka broker address
+CONSUMER_GROUP = 'your_consumer_group'  # Consumer group to monitor
+TOPIC = 'your_topic'  # Topic to monitor
+LAG_THRESHOLD = 100  # Lag threshold for alerting
+MONITOR_DURATION = 60  # in seconds
+POLL_INTERVAL = 5  # in seconds
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+def get_consumer_offsets(admin_client: KafkaAdminClient, group_id: str) -> Dict[TopicPartition, int]:
     try:
-        return KafkaConsumer(topic_name, bootstrap_servers=bootstrap_servers)
-    except KafkaError as e:
-        print(f"Error initializing KafkaConsumer: {e}")
-        return None
+        group_offsets = admin_client.list_consumer_group_offsets(group_id)
+        return {tp: offset.offset for tp, offset in group_offsets.items()}
+    except Exception as e:
+        logger.error(f"Failed to get consumer offsets for group '{group_id}': {e}")
+        return {}
 
-def collect_metrics(consumer, duration=60):
-    """Collect message rate and average message size metrics."""
-    end_time = time.time() + duration
-    message_counts = []
-    message_sizes = []
+def get_topic_partitions_offsets(consumer: KafkaConsumer, topic: str) -> Dict[TopicPartition, int]:
+    partitions = consumer.partitions_for_topic(topic)
+    if not partitions:
+        logger.error(f"No partitions found for topic '{topic}'")
+        return {}
+
+    end_offsets = consumer.end_offsets([TopicPartition(topic, p) for p in partitions])
+    return end_offsets
+
+def monitor_consumer_lag(admin_client: KafkaAdminClient, consumer: KafkaConsumer, group_id: str, topic: str, monitor_duration: int, poll_interval: int) -> List[Dict[str, int]]:
+    start_time = time.time()
+    end_time = start_time + monitor_duration
+    lag_data = []
 
     while time.time() < end_time:
-        start_interval = time.time()
-        count = 0
-        total_size = 0
-        for message in consumer:
-            count += 1
-            total_size += len(message.value)
-            if time.time() - start_interval > 1:
-                break
+        consumer_offsets = get_consumer_offsets(admin_client, group_id)
+        topic_end_offsets = get_topic_partitions_offsets(consumer, topic)
         
-        avg_size = total_size / count if count > 0 else 0
-        message_counts.append(count)
-        message_sizes.append(avg_size)
+        for tp, end_offset in topic_end_offsets.items():
+            consumer_offset = consumer_offsets.get(tp, None)
+            if consumer_offset is not None:
+                lag = end_offset - consumer_offset
+                lag_data.append({'partition': tp.partition, 'lag': lag, 'timestamp': time.time()})
+                if lag > LAG_THRESHOLD:
+                    logger.warning(f"High consumer lag detected for group '{group_id}', topic '{tp.topic}', partition {tp.partition}: {lag} messages")
+        
+        time.sleep(poll_interval)
 
-    return message_counts, message_sizes
+    return lag_data
 
-def visualize_metrics(message_counts, message_sizes):
-    """Visualize the collected metrics."""
-    fig, ax1 = plt.subplots()
+def plot_lag_data(lag_data: List[Dict[str, int]]) -> None:
+    timestamps = [entry['timestamp'] for entry in lag_data]
+    lags = [entry['lag'] for entry in lag_data]
+    partitions = [entry['partition'] for entry in lag_data]
 
-    ax2 = ax1.twinx()
-    ax1.plot(message_counts, 'g-')
-    ax2.plot(message_sizes, 'b-')
+    plt.figure(figsize=(12, 6))
+    for partition in set(partitions):
+        partition_lags = [lag for i, lag in enumerate(lags) if partitions[i] == partition]
+        partition_times = [timestamp for i, timestamp in enumerate(timestamps) if partitions[i] == partition]
+        plt.plot(partition_times, partition_lags, label=f'Partition {partition}')
 
-    ax1.set_xlabel('Time (seconds)')
-    ax1.set_ylabel('Message Rate (msgs/sec)', color='g')
-    ax2.set_ylabel('Avg Message Size (bytes)', color='b')
-    ax1.grid(True)
-
-    plt.title('Kafka Metrics Over Time')
+    plt.axhline(y=LAG_THRESHOLD, color='r', linestyle='--', label='High Lag Threshold')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Lag (messages)')
+    plt.title('Consumer Lag Over Time')
+    plt.legend()
+    plt.grid(True)
     plt.show()
 
+def main():
+    admin_client = KafkaAdminClient(bootstrap_servers=BROKER)
+    consumer = KafkaConsumer(bootstrap_servers=BROKER, group_id=CONSUMER_GROUP, enable_auto_commit=False)
+
+    lag_data = monitor_consumer_lag(admin_client, consumer, CONSUMER_GROUP, TOPIC, MONITOR_DURATION, POLL_INTERVAL)
+    plot_lag_data(lag_data)
+
 if __name__ == "__main__":
-    topic_name = 'your-topic-name'
-    consumer = initialize_consumer(topic_name)
-    if consumer:
-        message_counts, message_sizes = collect_metrics(consumer)
-        visualize_metrics(message_counts, message_sizes)
-    else:
-        print("Failed to initialize Kafka consumer.")
+    main()
