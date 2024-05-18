@@ -1,76 +1,49 @@
-import argparse
-from kafka.admin import KafkaAdminClient, NewPartitions, NewTopic
+from kafka.admin import KafkaAdminClient, NewPartitions
+from kafka import KafkaConsumer
+from kafka.errors import KafkaError
+import logging
+from typing import List
 
+# Configuration
+BROKER = 'localhost:9092'  # Kafka broker address
+TOPIC = 'your_topic'  # Topic name to alter partitions
+NUM_PARTITIONS = 3  # Number of partitions to set for the topic
 
-def get_partition_count(admin_client, topic_name):
-    topics_metadata = admin_client.describe_topics(topics=[topic_name])
-    for topic_metadata in topics_metadata:
-        if topic_metadata["topic"] == topic_name:
-            return len(topic_metadata["partitions"])
-    return None
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
+def create_admin_client(broker: str) -> KafkaAdminClient:
+    return KafkaAdminClient(bootstrap_servers=broker)
 
-def topic_exists(admin_client, topic_name):
-    topic_list = admin_client.list_topics()
-    return topic_name in topic_list
-
-
-def create_topic(admin_client, topic_name, partitions=1):
-    topic = NewTopic(
-        name=topic_name, num_partitions=partitions, replication_factor=1
-    )  # Assuming a replication factor of 1
-    admin_client.create_topics(new_topics=[topic])
-    print(f"Topic '{topic_name}' created with {partitions} partitions.")
-
-
-def increase_partition_count(admin_client, topic_name, new_count):
-    if not topic_exists(admin_client, topic_name):
-        create_topic(admin_client, topic_name, new_count)
-        return
-
-    total_partitions = get_partition_count(admin_client, topic_name)
-
-    if new_count <= total_partitions:
-        print(
-            f"Current partition count is {total_partitions}. Please provide a number greater than this."
-        )
-        return
-
+def alter_partitions(admin_client: KafkaAdminClient, topic: str, num_partitions: int) -> None:
+    new_partitions = {topic: NewPartitions(total_count=num_partitions)}
     try:
-        admin_client.create_partitions(
-            topic_partitions={topic_name: NewPartitions(total_count=new_count)}
-        )
-        print(f"Partition count increased to {new_count} for topic '{topic_name}'.")
-    except Exception as e:
-        print(f"Error increasing partition count: {str(e)}")
+        admin_client.create_partitions(new_partitions)
+        logger.info(f"Successfully altered partitions for topic '{topic}' to {num_partitions}")
+    except KafkaError as e:
+        logger.error(f"Failed to alter partitions for topic '{topic}': {e}")
 
+def display_partitions(admin_client: KafkaAdminClient, topic: str = None) -> None:
+    topic_partitions = admin_client.describe_topics([topic]) if topic else admin_client.describe_topics()
+    for tp in topic_partitions:
+        topic_name = tp['topic']
+        partitions = tp['partitions']
+        logger.info(f"Topic: {topic_name}, Partitions: {len(partitions)}")
+        for partition in partitions:
+            logger.info(f"Partition ID: {partition['partition']}")
+
+def main():
+    admin_client = create_admin_client(BROKER)
+    
+    # Alter partitions for the specified topic
+    alter_partitions(admin_client, TOPIC, NUM_PARTITIONS)
+    
+    # Display partitions for the specified topic
+    display_partitions(admin_client, TOPIC)
+    
+    # Optionally, display partitions for all topics
+    display_partitions(admin_client)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Manage Kafka topic partitions.")
-    parser.add_argument(
-        "--broker",
-        default="localhost:9092",
-        help="Address of the Kafka broker. Default: localhost:9092",
-    )
-    parser.add_argument(
-        "--topic", default="kafka_topic", help="Name of the Kafka topic."
-    )
-    parser.add_argument(
-        "--increase-to",
-        default=32,
-        type=int,
-        help="Increase the number of partitions to the specified value.",
-    )
-
-    args = parser.parse_args()
-
-    admin_client = KafkaAdminClient(bootstrap_servers=args.broker)
-
-    if args.increase_to:
-        increase_partition_count(admin_client, args.topic, args.increase_to)
-    else:
-        partition_count = get_partition_count(admin_client, args.topic)
-        if partition_count is not None:
-            print(f"Number of partitions for topic '{args.topic}': {partition_count}")
-        else:
-            print(f"Topic '{args.topic}' not found.")
+    main()
