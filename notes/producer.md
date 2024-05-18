@@ -2,6 +2,40 @@
 
 KafkaProducer is the client that allows Python applications to produce messages to a Kafka cluster. Understanding its key concepts and parameters is crucial for efficient integration and message publishing.
 
+```
++-------------------------+
+|     Kafka Producer      |
+|                         |
+|  Produces to Topic A    |
++-------------------------+
+          |
+          |
+          V
++-------------------------+
+|     Kafka Broker        |
+|                         |
+|  +------------------+   |
+|  |     Topic A      |   |
+|  |   Partition 0    |   |
+|  +------------------+   |
+|                         |
+|  +------------------+   |
+|  |     Topic A      |   |
+|  |   Partition 1    |   |
+|  +------------------+   |
+|                         |
+|  +------------------+   |
+|  |     Topic B      |   |
+|  |   Partition 0    |   |
+|  +------------------+   |
+|                         |
+|  +------------------+   |
+|  |     Topic B      |   |
+|  |   Partition 1    |   |
+|  +------------------+   |
++-------------------------+
+```
+
 ### Important Concepts to Understand
 
 1. **Message Key**:
@@ -56,7 +90,7 @@ KafkaProducer is the client that allows Python applications to produce messages 
    - The producer is instantiated with the desired parameters.
 
 2. **Message Production**:
-   - Messages are sent to topics using the `send()` method.
+   - Messages are sent to topics using the `send()` method. IMPORTANT: ASYNC
 
 3. **Flushing**:
    - Ensure all messages are sent with the `flush()` method.
