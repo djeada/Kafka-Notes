@@ -1,70 +1,53 @@
-from kafka import KafkaAdminClient, TopicPartition
-import datetime
+from kafka import KafkaAdminClient, KafkaConsumer, TopicPartition
+from kafka.errors import KafkaError
+from kafka.structs import OffsetAndMetadata
+import logging
 
-def reset_to_earliest(admin, group, topic):
-    beginning_offsets = admin.list_consumer_group_offsets(group, [TopicPartition(topic, p) for p in range(num_partitions)])
-    for tp, offset in beginning_offsets.items():
-        admin.alter_consumer_group_offsets(group, {tp: offset})
+# Configuration
+BROKER = 'localhost:9092'  # Kafka broker address
+CONSUMER_GROUP = 'your_consumer_group'  # Consumer group to reset offsets
+TOPIC = 'your_topic'  # Topic to reset offsets
+RESET_OFFSET_TO = 'earliest'  # Options: 'earliest', 'latest', or specific offset integer
 
-def reset_to_latest(admin, group, topic):
-    end_offsets = admin.list_consumer_offsets(group, [TopicPartition(topic, p) for p in range(num_partitions)])
-    for tp, offset in end_offsets.items():
-        admin.alter_consumer_group_offsets(group, {tp: offset})
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-def reset_to_timestamp(admin, group, topic, timestamp):
-    date_format = "%Y-%m-%d %H:%M:%S"
-    target_time = datetime.datetime.strptime(timestamp, date_format)
-    timestamp_offsets = admin.list_consumer_offsets(group, [TopicPartition(topic, p) for p in range(num_partitions)], target_time.timestamp() * 1000)
-    for tp, offset in timestamp_offsets.items():
-        admin.alter_consumer_group_offsets(group, {tp: offset})
+def reset_consumer_group_offset(admin_client: KafkaAdminClient, consumer: KafkaConsumer, group_id: str, topic: str, reset_to: str) -> None:
+    partitions = consumer.partitions_for_topic(topic)
+    if not partitions:
+        logger.error(f"No partitions found for topic '{topic}'")
+        return
+    
+    topic_partitions = [TopicPartition(topic, p) for p in partitions]
+    
+    offsets = {}
+    if reset_to == 'earliest':
+        beginning_offsets = consumer.beginning_offsets(topic_partitions)
+        offsets = {tp: OffsetAndMetadata(offset, None) for tp, offset in beginning_offsets.items()}
+    elif reset_to == 'latest':
+        end_offsets = consumer.end_offsets(topic_partitions)
+        offsets = {tp: OffsetAndMetadata(offset, None) for tp, offset in end_offsets.items()}
+    else:
+        try:
+            specific_offset = int(reset_to)
+            offsets = {tp: OffsetAndMetadata(specific_offset, None) for tp in topic_partitions}
+        except ValueError:
+            logger.error(f"Invalid offset value: {reset_to}")
+            return
+    
+    try:
+        admin_client.alter_consumer_group_offsets(group_id, offsets)
+        logger.info(f"Successfully reset offsets for group '{group_id}' on topic '{topic}' to '{reset_to}'")
+    except KafkaError as e:
+        logger.error(f"Failed to reset offsets for group '{group_id}' on topic '{topic}': {e}")
+
+def main():
+    admin_client = KafkaAdminClient(bootstrap_servers=BROKER)
+    consumer = KafkaConsumer(bootstrap_servers=BROKER, group_id=CONSUMER_GROUP)
+
+    # Reset consumer group offset
+    reset_consumer_group_offset(admin_client, consumer, CONSUMER_GROUP, TOPIC, RESET_OFFSET_TO)
 
 if __name__ == "__main__":
-    admin = KafkaAdminClient(bootstrap_servers='localhost:9092')
-
-    # List all consumer groups
-    consumer_groups = admin.list_consumer_groups().keys()
-    print("\nConsumer Groups:")
-    for index, group in enumerate(consumer_groups):
-        print(f"{index + 1}. {group}")
-
-    group = input("Choose a consumer group by number or enter its name: ")
-    if group.isdigit():
-        group = consumer_groups[int(group) - 1]
-        
-    # List all topics
-    topics = admin.list_topics()
-    print("\nTopics:")
-    for index, topic in enumerate(topics):
-        print(f"{index + 1}. {topic}")
-
-    topic = input("Choose a topic by number or enter its name: ")
-    if topic.isdigit():
-        topic = topics[int(topic) - 1]
-
-    # Display offsets for the chosen group and topic
-    print(f"\nCurrent offsets for group '{group}' and topic '{topic}':")
-    offsets = admin.list_consumer_group_offsets(group).items()
-    for tp, offset in offsets:
-        if tp.topic == topic:
-            print(f"Partition {tp.partition}: Offset {offset.offset}")
-
-    # NOTE: For simplicity, we're assuming a fixed number of partitions. In a real-world scenario, you'd fetch this dynamically.
-    num_partitions = len([tp for tp, offset in offsets if tp.topic == topic])
-
-    print("\nChoose offset reset option:")
-    print("1: Earliest")
-    print("2: Latest")
-    print("3: Specific Date/Time (format: YYYY-MM-DD HH:MM:SS)")
-    choice = input()
-
-    if choice == "1":
-        reset_to_earliest(admin, group, topic)
-    elif choice == "2":
-        reset_to_latest(admin, group, topic)
-    elif choice == "3":
-        timestamp = input("Enter date/time: ")
-        reset_to_timestamp(admin, group, topic, timestamp)
-    else:
-        print("Invalid choice.")
-
-    print("Offset reset operation completed.")
+    main()
