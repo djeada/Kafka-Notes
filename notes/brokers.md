@@ -2,6 +2,21 @@
 
 Brokers are the fundamental building blocks of a Kafka cluster and play a critical role in ensuring message durability, scalability, and fault tolerance. Let's delve deeper into the details of Kafka brokers:
 
+```
++-------------------------------- Kafka Broker --------------------------------+
+|                                                                              |
+|  +------------------+    +------------------+    +------------------+        |
+|  |     Topic A      |    |     Topic A      |    |     Topic B      |        |
+|  |   Partition 0    |    |   Partition 1    |    |   Partition 0    |        |
+|  +------------------+    +------------------+    +------------------+        |
+|                                                                              |
+|  +------------------+    +------------------+                                |
+|  |     Topic B      |    |     Topic C      |                                |
+|  |   Partition 1    |    |   Partition 0    |                                |
+|  +------------------+    +------------------+                                |
++------------------------------------------------------------------------------+
+```
+
 ### Basics of How Brokers Work
 
 1. **Storage Units**: 
