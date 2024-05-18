@@ -2,6 +2,31 @@
 
 KafkaConsumer is the client that allows Python applications to consume messages from a Kafka cluster. It is essential to understand its key concepts and parameters for an effective integration.
 
+```
++-------------------------------- Kafka Broker --------------------------------+
+|                                                                              |
+|  +------------------+    +------------------+    +------------------+        |
+|  |     Topic A      |    |     Topic A      |    |     Topic B      |        |
+|  |   Partition 0    |    |   Partition 1    |    |   Partition 0    |        |
+|  +------------------+    +------------------+    +------------------+        |
+|                                                                              |
+|  +------------------+    +------------------+    +------------------+        |
+|  |     Topic B      |    |     Topic C      |    |     Topic C      |        |
+|  |   Partition 1    |    |   Partition 0    |    |   Partition 1    |        |
+|  +------------------+    +------------------+    +------------------+        |
++------------------------------------------------------------------------------+
+        |                                         |
+        |                                         |
+        V                                         V
++-----------------------------+      +-----------------------------+
+|       Kafka Consumer 1      |      |       Kafka Consumer 2      |
+|                             |      |                             |
+|  Reads from Topic A,        |      |  Reads from Topic B,        |
+|  Partition 0                |      |  Partition 1                |
+|                             |      |                             |
++-----------------------------+      +-----------------------------+
+```
+
 ### Important Concepts to Understand
 
 1. **Consumer Groups**:
