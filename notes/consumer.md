@@ -27,6 +27,27 @@ KafkaConsumer is the client that allows Python applications to consume messages 
 +-----------------------------+      +-----------------------------+
 ```
 
+groups
+```
+          |
+          |
+          V
++-----------------------------+
+|    Kafka Consumer Group     |
+|                             |
+|  +-----------------------+  |
+|  |   Consumer 1          |  |
+|  |   Reads from          |  |
+|  |   Topic A, Partition 0|  |
+|  +-----------------------+  |
+|                             |
+|  +-----------------------+  |
+|  |   Consumer 2          |  |
+|  |   Reads from          |  |
+|  |   Topic A, Partition 1|  |
+|  +-----------------------+  |
+```
+
 ### Important Concepts to Understand
 
 1. **Consumer Groups**:
