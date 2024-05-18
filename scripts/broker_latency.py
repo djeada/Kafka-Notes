@@ -1,39 +1,60 @@
 import time
 import matplotlib.pyplot as plt
 import socket
+import logging
+from typing import List
 
 # Configuration
-brokers = ['localhost:9092']  # add all your brokers here
-timeout = 1  # socket timeout in seconds
-ping_interval = 5  # in seconds
-monitor_duration = 60  # in seconds
-high_latency_threshold = 200  # in milliseconds
+BROKERS = ['localhost:9092']  # add all your brokers here
+TIMEOUT = 1  # socket timeout in seconds
+PING_INTERVAL = 5  # in seconds
+MONITOR_DURATION = 60  # in seconds
+HIGH_LATENCY_THRESHOLD = 200  # in milliseconds
 
-latencies = []
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-end_time = time.time() + monitor_duration
-while time.time() < end_time:
-    for broker in brokers:
-        host, port = broker.split(":")
-        start_time = time.time()
-        try:
-            socket.create_connection((host, int(port)), timeout=timeout)
-            latency = (time.time() - start_time) * 1000  # convert to milliseconds
+def get_latency(host: str, port: int, timeout: int) -> float:
+    start_time = time.time()
+    try:
+        socket.create_connection((host, port), timeout=timeout)
+        latency = (time.time() - start_time) * 1000  # convert to milliseconds
+    except socket.error:
+        latency = float('inf')
+        logger.error(f"Cannot connect to broker {host}:{port}. Broker might be down!")
+    return latency
+
+def monitor_brokers(brokers: List[str], duration: int, interval: int, timeout: int) -> List[float]:
+    latencies = []
+    end_time = time.time() + duration
+    while time.time() < end_time:
+        for broker in brokers:
+            host, port = broker.split(":")
+            latency = get_latency(host, int(port), timeout)
             latencies.append(latency)
-        except Exception as e:
-            latencies.append(float('inf'))
-            print(f"ALERT: Cannot connect to broker {broker}. Broker might be down!")
-        time.sleep(ping_interval)
+        time.sleep(interval)
+    return latencies
 
-# Visualization
-plt.plot(latencies)
-plt.axhline(y=high_latency_threshold, color='r', linestyle='--')
-plt.xlabel('Time (intervals)')
-plt.ylabel('Latency (ms)')
-plt.title('Broker Latency Over Time')
-plt.show()
+def plot_latencies(latencies: List[float], threshold: float) -> None:
+    plt.plot(latencies, label='Latency')
+    plt.axhline(y=threshold, color='r', linestyle='--', label='High Latency Threshold')
+    plt.xlabel('Time (intervals)')
+    plt.ylabel('Latency (ms)')
+    plt.title('Broker Latency Over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
-# Alerting for high latency
-for i, latency in enumerate(latencies):
-    if latency > high_latency_threshold and latency != float('inf'):
-        print(f"ALERT: High latency detected at interval {i}. Latency: {latency}ms")
+def alert_high_latency(latencies: List[float], threshold: float) -> None:
+    for i, latency in enumerate(latencies):
+        if latency > threshold and latency != float('inf'):
+            logger.warning(f"High latency detected at interval {i}. Latency: {latency:.2f}ms")
+
+def main():
+    latencies = monitor_brokers(BROKERS, MONITOR_DURATION, PING_INTERVAL, TIMEOUT)
+    plot_latencies(latencies, HIGH_LATENCY_THRESHOLD)
+    alert_high_latency(latencies, HIGH_LATENCY_THRESHOLD)
+
+if __name__ == "__main__":
+    main()
