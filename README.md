@@ -2,7 +2,9 @@
 
  Concepts and applications of Kafka for real-time data streaming and distributed messaging systems. This repository includes a range of topics from introductory concepts to advanced use cases. 
 
-https://www.linkedin.com/pulse/apache-kafka-architecture-hussein-nasser-wpqcc/
+- https://www.linkedin.com/pulse/apache-kafka-architecture-hussein-nasser-wpqcc/
+- https://www.geeknarrator.com/blog/diskless-kafka-kip-1150
+- https://bytebytego.com/guides/can-kafka-lose-messages/
 
  
 ## Labs
