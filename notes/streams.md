@@ -104,7 +104,6 @@ When building stream processing pipelines, handling errors gracefully is essenti
 
 ```python
 from kafka import KafkaConsumer, KafkaProducer
-from kafka.errors import KafkaError
 
 consumer = KafkaConsumer('input-topic', bootstrap_servers='localhost:9092')
 producer = KafkaProducer(bootstrap_servers='localhost:9092')
@@ -114,9 +113,8 @@ for message in consumer:
         result = message.value.decode('utf-8').upper().encode('utf-8')
         future = producer.send('output-topic', value=result)
         future.get(timeout=10)
-    except KafkaError as e:
-        producer.send('dead-letter-topic', value=message.value)
     except Exception as e:
+        print(f"Failed to process message at offset {message.offset}: {e}")
         producer.send('dead-letter-topic', value=message.value)
 ```
 
