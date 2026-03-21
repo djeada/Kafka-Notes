@@ -1,12 +1,21 @@
 # Kafka Notes
 
- Concepts and applications of Kafka for real-time data streaming and distributed messaging systems. This repository includes a range of topics from introductory concepts to advanced use cases. 
+Concepts and applications of Apache Kafka for real-time data streaming and distributed messaging systems. This repository includes a range of topics from introductory concepts to advanced use cases, covering producers, consumers, brokers, stream processing, security, schema management, monitoring, and performance tuning.
+
+## Getting Started
+
+1. Clone this repository.
+2. Install Python dependencies: `pip install -r requirements.txt`
+3. Start with the [notes](#notes) for conceptual understanding, then move to [labs](#labs) for hands-on practice.
+4. Use the [flashcards](flashcards/intro.md) for study and review.
 
 ## References
 
 - https://www.linkedin.com/pulse/apache-kafka-architecture-hussein-nasser-wpqcc/
 - https://www.geeknarrator.com/blog/diskless-kafka-kip-1150
 - https://bytebytego.com/guides/can-kafka-lose-messages/
+- https://kafka.apache.org/documentation/
+- https://developer.confluent.io/
 
 ## Notes
 
@@ -17,9 +26,17 @@
 | 3   | Kafka Brokers                                                           | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/brokers.md)                             |
 | 4   | Kafka Topics and Partitions                                             | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/partitions.md)                          |
 | 5   | Kafka Connect                                                           | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/kafka_connect.md)                       |
-| 6   | Kafka Streams                                                           | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/streams.md)                             |
+| 6   | Kafka Streams and Stream Processing                                     | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/streams.md)                             |
 | 7   | Monitoring and Logging                                                  | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/monitoring.md)                          |
 | 8   | Why Is Kafka Fast                                                       | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/why_is_kafka_fast.md)                   |
+| 9   | Kafka Security (SSL, SASL, ACLs)                                        | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/security.md)                            |
+| 10  | Schema Registry                                                         | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/schema_registry.md)                     |
+
+## Case Studies
+
+| #   | Title                                                                   | Link                                                                                                  |
+|-----|-------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| 1   | Optimizing Kafka Producer Writes (ext4 vs XFS)                          | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/case_studies/optimizing_kafka_writes.md) |
 
 ## Labs
 

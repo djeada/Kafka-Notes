@@ -368,3 +368,201 @@ Ensuring security and data isolation is paramount when multiple teams or applica
   - Consider network segmentation or virtualization to further isolate tenant data streams.
 - **Audit and Monitoring:**  
   - Regularly audit access logs and monitor for unauthorized access or anomalous behavior.
+
+---
+
+### 37. **What is KRaft mode and why is it replacing ZooKeeper?**
+KRaft (Kafka Raft) is Kafka's built-in consensus protocol that replaces the external ZooKeeper dependency for cluster metadata management.
+
+- **Simplified Architecture:**  
+  - Removes the need to deploy and manage a separate ZooKeeper ensemble alongside the Kafka cluster.
+- **Metadata as a Log:**  
+  - Cluster metadata is stored in an internal `__cluster_metadata` topic and replicated using the Raft protocol.
+- **Controller Quorum:**  
+  - A set of controller nodes form a quorum (`controller.quorum.voters`), and one is elected as the active controller.
+- **Combined vs Dedicated Nodes:**  
+  - In small clusters, brokers can also serve as controllers (combined mode). Large clusters benefit from dedicated controller nodes.
+
+---
+
+### 38. **What are idempotent producers and why do they matter?**
+Idempotent producers ensure that retried message sends do not result in duplicate messages being written to a partition.
+
+- **How It Works:**  
+  - Each producer is assigned a unique Producer ID (PID) and attaches a monotonically increasing sequence number to every message.
+- **Broker-Side Deduplication:**  
+  - The broker tracks the latest sequence number per PID and partition, rejecting duplicates automatically.
+- **Configuration:**  
+  - Enable with `enable_idempotence=True`. This also sets `acks=all` and `max_in_flight_requests_per_connection=5`.
+- **Scope:**  
+  - Idempotence guarantees exactly-once delivery within a single partition and producer session.
+
+---
+
+### 39. **How do Kafka transactions work?**
+Kafka transactions allow producers to write atomically to multiple partitions and topics, ensuring all-or-nothing semantics.
+
+- **Transactional Producer:**  
+  - Configure with a `transactional.id`. Call `initTransactions()`, `beginTransaction()`, `commitTransaction()`, or `abortTransaction()`.
+- **Consumer Integration:**  
+  - Consumers using `isolation_level=read_committed` only see messages from committed transactions.
+- **Offset Commits:**  
+  - Consumer offsets can be committed as part of the transaction, enabling exactly-once processing in consume-transform-produce pipelines.
+- **Use Cases:**  
+  - Financial systems, order processing, and any workflow requiring atomicity across multiple topics.
+
+---
+
+### 40. **What is the Schema Registry and why is it important?**
+The Schema Registry is a centralized service that stores and manages schemas for Kafka message keys and values.
+
+- **Schema Enforcement:**  
+  - Producers register schemas before sending data. Consumers look up schemas to deserialize messages correctly.
+- **Supported Formats:**  
+  - Avro (most popular), Protobuf, and JSON Schema.
+- **Compatibility Checking:**  
+  - The registry enforces compatibility rules (BACKWARD, FORWARD, FULL, NONE) to prevent breaking changes.
+- **Schema IDs:**  
+  - Each schema version receives a unique ID embedded in the message, enabling consumers to deserialize without prior schema knowledge.
+
+---
+
+### 41. **What are the different schema compatibility modes?**
+Compatibility modes control which schema changes are allowed when evolving schemas over time.
+
+- **BACKWARD (default):**  
+  - New schema can read data written with the previous schema. Allows adding optional fields or removing fields with defaults.
+- **FORWARD:**  
+  - Old schema can read data written with the new schema. Allows removing optional fields or adding fields with defaults.
+- **FULL:**  
+  - Both backward and forward compatible. Only allows adding or removing optional fields with defaults.
+- **NONE:**  
+  - No compatibility checking. Any schema change is accepted, but may break consumers.
+- **Transitive Variants:**  
+  - BACKWARD_TRANSITIVE, FORWARD_TRANSITIVE, and FULL_TRANSITIVE check against all previous versions, not just the latest.
+
+---
+
+### 42. **What is exactly-once semantics (EOS) in Kafka Streams?**
+Exactly-once semantics ensures that each input record is processed exactly once, even in the presence of failures.
+
+- **How It Works:**  
+  - Combines idempotent producers, transactions, and consumer offset commits into a single atomic operation.
+- **Configuration:**  
+  - Set `processing.guarantee=exactly_once_v2` in Kafka Streams applications.
+- **Transaction Flow:**  
+  - For each batch: begin transaction → produce output records → commit consumer offsets → commit transaction.
+- **Trade-Offs:**  
+  - Slightly higher latency and lower throughput compared to at-least-once processing, but eliminates duplicate processing.
+
+---
+
+### 43. **What is the difference between KStream and KTable in Kafka Streams?**
+KStream and KTable represent two fundamental abstractions for stream processing in Kafka Streams.
+
+- **KStream (Record Stream):**  
+  - An unbounded stream of key-value records. Each record is an independent event. Inserts are appended, and duplicates are allowed.
+- **KTable (Changelog Stream):**  
+  - A changelog stream where each record is an update to the value for a given key. Later records with the same key replace earlier ones.
+- **Use Cases:**  
+  - KStream: event logs, clickstreams, sensor readings. KTable: user profiles, configuration state, running aggregates.
+- **Joins:**  
+  - KStream-KStream joins produce a stream. KStream-KTable joins enrich events with lookup data. KTable-KTable joins produce a table.
+
+---
+
+### 44. **What is log compaction and when should you use it?**
+Log compaction is a retention policy that keeps only the latest value for each message key in a partition.
+
+- **How It Works:**  
+  - A background cleaner thread scans log segments and removes older records that have a newer record with the same key.
+- **Tombstones:**  
+  - A record with a null value acts as a delete marker. After a configurable delay (`delete.retention.ms`), the tombstone is removed.
+- **Configuration:**  
+  - Set `cleanup.policy=compact` on the topic. Use `min.cleanable.dirty.ratio` and `min.compaction.lag.ms` to control compaction aggressiveness.
+- **Use Cases:**  
+  - Maintaining the latest state (e.g., database snapshots, user preferences, configuration). Kafka Streams changelog topics use compaction by default.
+
+---
+
+### 45. **How does Kafka Connect's distributed mode handle fault tolerance?**
+Distributed mode runs multiple Connect workers as a cluster, providing automatic load balancing and failover.
+
+- **Worker Cluster:**  
+  - Connectors and tasks are distributed across all available workers. Workers coordinate via internal Kafka topics.
+- **Task Rebalancing:**  
+  - When a worker fails, its tasks are automatically reassigned to remaining workers in the group.
+- **REST API Management:**  
+  - Connectors are submitted and managed via a REST API rather than properties files.
+- **Internal Topics:**  
+  - `config.storage.topic`, `offset.storage.topic`, and `status.storage.topic` store connector state durably in Kafka.
+
+---
+
+### 46. **What are the different SASL mechanisms available for Kafka authentication?**
+Kafka supports several SASL (Simple Authentication and Security Layer) mechanisms with varying security levels.
+
+- **PLAIN:**  
+  - Username/password sent in cleartext. Simple to set up but requires SSL/TLS for security. Suitable for development or internal networks.
+- **SCRAM-SHA-256 / SCRAM-SHA-512:**  
+  - Challenge-response protocol that never sends passwords in cleartext. Credentials stored in ZooKeeper or KRaft metadata.
+- **GSSAPI (Kerberos):**  
+  - Enterprise-grade authentication using Kerberos tickets. Complex to set up but provides strong security and centralized identity management.
+- **OAUTHBEARER:**  
+  - Token-based authentication using OAuth 2.0 / OpenID Connect. Ideal for cloud-native and microservice architectures.
+
+---
+
+### 47. **What is the role of the page cache in Kafka's performance?**
+Kafka relies heavily on the operating system's page cache instead of maintaining its own in-process cache.
+
+- **No JVM GC Pressure:**  
+  - Data stays in OS-managed memory, avoiding garbage collection pauses that would impact latency.
+- **Warm Restarts:**  
+  - After a broker restart, recently accessed data may still reside in the page cache, allowing consumers to read without hitting disk.
+- **Zero-Copy Transfers:**  
+  - The `sendfile()` system call transfers data directly from page cache to the network interface, bypassing user-space buffers entirely.
+- **Sizing Guidance:**  
+  - Allocate enough system RAM for the page cache to hold the most recent log segments that consumers are actively reading.
+
+---
+
+### 48. **What windowing types are available in Kafka Streams?**
+Windowing groups records by time for aggregation and join operations.
+
+- **Tumbling Windows:**  
+  - Fixed-size, non-overlapping time windows. Each record belongs to exactly one window (e.g., 5-minute counts).
+- **Hopping Windows:**  
+  - Fixed-size windows that advance by a configurable hop interval. Windows may overlap (e.g., 10-minute window, 5-minute hop).
+- **Sliding Windows:**  
+  - Used for join operations. A window is defined by a time difference between records rather than fixed boundaries.
+- **Session Windows:**  
+  - Dynamic windows that close after a configurable inactivity gap. Useful for user session analysis.
+
+---
+
+### 49. **How should you choose the right number of partitions for a topic?**
+The partition count affects parallelism, resource usage, and operational complexity.
+
+- **Match Consumer Parallelism:**  
+  - The maximum number of consumers in a group that can read in parallel equals the partition count.
+- **Throughput Target:**  
+  - Estimate the required throughput and divide by the throughput a single partition can sustain (~10 MB/s write, ~30 MB/s read as a guideline).
+- **Avoid Over-Partitioning:**  
+  - Each partition uses file handles, memory for indexes, and adds replication overhead. Hundreds of thousands of partitions increase leader election time.
+- **Plan Ahead:**  
+  - Partition counts can only be increased, never decreased. Start with a reasonable estimate and leave room to grow.
+
+---
+
+### 50. **What is the difference between `subscribe()` and `assign()` in KafkaConsumer?**
+These two methods control how a consumer receives partition assignments.
+
+- **`subscribe()`:**  
+  - Joins a consumer group and lets Kafka manage partition assignment dynamically. Supports rebalancing when consumers join or leave.
+- **`assign()`:**  
+  - Manually assigns specific partitions to the consumer. No consumer group coordination or rebalancing occurs.
+- **When to Use `subscribe()`:**  
+  - Most applications that need scalable, fault-tolerant consumption with automatic load balancing.
+- **When to Use `assign()`:**  
+  - Specialized use cases like reading from specific partitions, replaying data, or building custom tools where group coordination is unnecessary.
