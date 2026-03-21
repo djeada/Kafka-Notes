@@ -2,11 +2,25 @@
 
  Concepts and applications of Kafka for real-time data streaming and distributed messaging systems. This repository includes a range of topics from introductory concepts to advanced use cases. 
 
+## References
+
 - https://www.linkedin.com/pulse/apache-kafka-architecture-hussein-nasser-wpqcc/
 - https://www.geeknarrator.com/blog/diskless-kafka-kip-1150
 - https://bytebytego.com/guides/can-kafka-lose-messages/
 
- 
+## Notes
+
+| #   | Title                                                                   | Link                                                                                                  |
+|-----|-------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| 1   | KafkaProducer from kafka-python                                         | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/producer.md)                            |
+| 2   | KafkaConsumer from kafka-python                                         | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/consumer.md)                            |
+| 3   | Kafka Brokers                                                           | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/brokers.md)                             |
+| 4   | Kafka Topics and Partitions                                             | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/partitions.md)                          |
+| 5   | Kafka Connect                                                           | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/kafka_connect.md)                       |
+| 6   | Kafka Streams                                                           | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/streams.md)                             |
+| 7   | Monitoring and Logging                                                  | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/monitoring.md)                          |
+| 8   | Why Is Kafka Fast                                                       | [NOTES](https://github.com/djeada/Kafka-Notes/blob/main/notes/why_is_kafka_fast.md)                   |
+
 ## Labs
 
 | #   | Title                                                                   | Link                                                                                                  |
