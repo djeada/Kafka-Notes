@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 
-REPO_ROOT = pathlib.Path("/home/runner/work/Kafka-Notes/Kafka-Notes")
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def load_script_module(module_name: str, relative_path: str):
