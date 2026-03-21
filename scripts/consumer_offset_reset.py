@@ -1,13 +1,15 @@
+import argparse
 from kafka import KafkaAdminClient, KafkaConsumer, TopicPartition
 from kafka.errors import KafkaError
 from kafka.structs import OffsetAndMetadata
 import logging
+from typing import Optional, Sequence
 
 # Configuration
-BROKER = 'localhost:9092'  # Kafka broker address
-CONSUMER_GROUP = 'your_consumer_group'  # Consumer group to reset offsets
-TOPIC = 'your_topic'  # Topic to reset offsets
-RESET_OFFSET_TO = 'earliest'  # Options: 'earliest', 'latest', or specific offset integer
+DEFAULT_BROKER = 'localhost:9092'  # Kafka broker address
+DEFAULT_CONSUMER_GROUP = 'your_consumer_group'  # Consumer group to reset offsets
+DEFAULT_TOPIC = 'your_topic'  # Topic to reset offsets
+DEFAULT_RESET_OFFSET_TO = 'earliest'  # Options: 'earliest', 'latest', or specific offset integer
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -42,12 +44,34 @@ def reset_consumer_group_offset(admin_client: KafkaAdminClient, consumer: KafkaC
     except KafkaError as e:
         logger.error(f"Failed to reset offsets for group '{group_id}' on topic '{topic}': {e}")
 
-def main():
-    admin_client = KafkaAdminClient(bootstrap_servers=BROKER)
-    consumer = KafkaConsumer(bootstrap_servers=BROKER, group_id=CONSUMER_GROUP)
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Reset Kafka consumer group offsets to earliest, latest, or a specific offset.")
+    parser.add_argument("--broker", default=DEFAULT_BROKER, help="Kafka broker address")
+    parser.add_argument("--consumer-group", default=DEFAULT_CONSUMER_GROUP, help="Consumer group to reset")
+    parser.add_argument("--topic", default=DEFAULT_TOPIC, help="Topic to reset offsets for")
+    parser.add_argument(
+        "--reset-to",
+        default=DEFAULT_RESET_OFFSET_TO,
+        help="Offset target: 'earliest', 'latest', or a specific integer offset",
+    )
+    return parser
+
+def parse_args(args: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    return build_parser().parse_args(args)
+
+def main(args: Optional[Sequence[str]] = None) -> None:
+    parsed_args = parse_args(args)
+    admin_client = KafkaAdminClient(bootstrap_servers=parsed_args.broker)
+    consumer = KafkaConsumer(bootstrap_servers=parsed_args.broker, group_id=parsed_args.consumer_group)
 
     # Reset consumer group offset
-    reset_consumer_group_offset(admin_client, consumer, CONSUMER_GROUP, TOPIC, RESET_OFFSET_TO)
+    reset_consumer_group_offset(
+        admin_client,
+        consumer,
+        parsed_args.consumer_group,
+        parsed_args.topic,
+        parsed_args.reset_to,
+    )
 
 if __name__ == "__main__":
     main()

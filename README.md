@@ -37,3 +37,17 @@
 | 10  | Tuning, Performance, and Reliability                                   | [LAB](https://github.com/djeada/Kafka-Notes/tree/main/labs/lab10)                                     |
 | 11  | Schema Management with Schema Registry (Avro/Protobuf/JSON)              | [LAB](https://github.com/djeada/Kafka-Notes/tree/main/labs/lab11)                                     |
 | 12  | Advanced Setup, Final Project, and Best Practices                        | [LAB](https://github.com/djeada/Kafka-Notes/tree/main/labs/lab12)                                     |
+
+## Scripts
+
+The repository also includes a few standalone helper scripts in `scripts/` for common Kafka administration and monitoring tasks. Each script now accepts command-line arguments, so you can reuse them against your own brokers, topics, and consumer groups without editing the source.
+
+### Examples
+
+```bash
+python scripts/alter_partitions.py --broker localhost:9092 --topic orders --num-partitions 6
+python scripts/broker_latency.py --brokers localhost:9092 localhost:9093 --monitor-duration 30 --ping-interval 5
+python scripts/consumer_lag_alert.py --broker localhost:9092 --consumer-group analytics --topic orders --lag-threshold 250
+python scripts/consumer_offset_reset.py --broker localhost:9092 --consumer-group analytics --topic orders --reset-to earliest
+python scripts/metrics_visualization.py --broker localhost:9092 --consumer-group analytics --topic orders --monitor-duration 120 --poll-interval 10
+```

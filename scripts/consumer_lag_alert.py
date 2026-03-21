@@ -1,13 +1,14 @@
+import argparse
 from kafka import KafkaAdminClient, KafkaConsumer, TopicPartition
 from kafka.errors import KafkaError
 import logging
-from typing import List, Dict
+from typing import Dict, Optional, Sequence
 
 # Configuration
-BROKER = 'localhost:9092'  # Kafka broker address
-CONSUMER_GROUP = 'your_consumer_group'  # Consumer group to monitor
-TOPIC = 'your_topic'  # Topic to monitor
-LAG_THRESHOLD = 100  # Lag threshold for alerting
+DEFAULT_BROKER = 'localhost:9092'  # Kafka broker address
+DEFAULT_CONSUMER_GROUP = 'your_consumer_group'  # Consumer group to monitor
+DEFAULT_TOPIC = 'your_topic'  # Topic to monitor
+DEFAULT_LAG_THRESHOLD = 100  # Lag threshold for alerting
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -41,11 +42,23 @@ def monitor_consumer_lag(admin_client: KafkaAdminClient, consumer: KafkaConsumer
             if lag > lag_threshold:
                 logger.warning(f"High consumer lag detected for group '{group_id}', topic '{tp.topic}', partition {tp.partition}: {lag} messages")
 
-def main():
-    admin_client = KafkaAdminClient(bootstrap_servers=BROKER)
-    consumer = KafkaConsumer(bootstrap_servers=BROKER, group_id=CONSUMER_GROUP)
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Check Kafka consumer lag and warn when it exceeds a threshold.")
+    parser.add_argument("--broker", default=DEFAULT_BROKER, help="Kafka broker address")
+    parser.add_argument("--consumer-group", default=DEFAULT_CONSUMER_GROUP, help="Consumer group to monitor")
+    parser.add_argument("--topic", default=DEFAULT_TOPIC, help="Topic to monitor")
+    parser.add_argument("--lag-threshold", type=int, default=DEFAULT_LAG_THRESHOLD, help="Lag threshold for alerting")
+    return parser
 
-    monitor_consumer_lag(admin_client, consumer, CONSUMER_GROUP, TOPIC, LAG_THRESHOLD)
+def parse_args(args: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    return build_parser().parse_args(args)
+
+def main(args: Optional[Sequence[str]] = None) -> None:
+    parsed_args = parse_args(args)
+    admin_client = KafkaAdminClient(bootstrap_servers=parsed_args.broker)
+    consumer = KafkaConsumer(bootstrap_servers=parsed_args.broker, group_id=parsed_args.consumer_group)
+
+    monitor_consumer_lag(admin_client, consumer, parsed_args.consumer_group, parsed_args.topic, parsed_args.lag_threshold)
 
 if __name__ == "__main__":
     main()
