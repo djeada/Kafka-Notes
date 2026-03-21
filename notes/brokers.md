@@ -290,7 +290,7 @@ Kafka supports rack-aware replica placement to improve fault tolerance across ph
 ```
 
 3. **Fault Tolerance Benefit**:
-   - Without rack awareness, all replicas of a partition could land on brokers in the same rack. If that rack loses power or network, all replicas become unavailable and data is at risk.
+   - Without rack awareness, all replicas of a partition could land on brokers in the same rack. If that rack loses power or network, the partition becomes unavailable for both reads and writes, and any subsequent failures could result in permanent data loss.
    - With rack awareness, losing an entire rack still leaves at least one replica available in another rack, preserving both availability and durability.
 
 4. **Cloud Availability Zones**:
