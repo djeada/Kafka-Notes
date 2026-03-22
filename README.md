@@ -55,6 +55,23 @@ Concepts and applications of Apache Kafka for real-time data streaming and distr
 | 11  | Schema Management with Schema Registry (Avro/Protobuf/JSON)              | [LAB](https://github.com/djeada/Kafka-Notes/tree/main/labs/lab11)                                     |
 | 12  | Advanced Setup, Final Project, and Best Practices                        | [LAB](https://github.com/djeada/Kafka-Notes/tree/main/labs/lab12)                                     |
 
+## Projects
+
+Self-contained projects that progress from beginner to advanced. Each project includes a `docker-compose.yml` for spinning up the Kafka broker, Python application code, and a dedicated README with step-by-step instructions. Assumes a Linux environment with Docker installed.
+
+| #   | Title                                                                   | Difficulty             | Link                                                                                                           |
+|-----|-------------------------------------------------------------------------|------------------------|-----------------------------------------------------------------------------------------------------------------|
+| 1   | Hello Kafka                                                             | Beginner               | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/01_hello_kafka)                             |
+| 2   | Event Counter                                                           | Beginner               | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/02_event_counter)                           |
+| 3   | CSV Ingestion Pipeline                                                  | Beginner-Intermediate  | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/03_csv_ingestion_pipeline)                  |
+| 4   | Multi-Consumer Notifications                                            | Intermediate           | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/04_multi_consumer_notifications)            |
+| 5   | Simple Dataflow Pipeline                                                | Intermediate           | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/05_simple_dataflow_pipeline)                |
+| 6   | Sensor Data Aggregator                                                  | Intermediate           | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/06_sensor_data_aggregator)                  |
+| 7   | Log Aggregation System                                                  | Intermediate-Advanced  | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/07_log_aggregation_system)                  |
+| 8   | Real-Time Word Count                                                    | Advanced               | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/08_real_time_word_count)                    |
+| 9   | Fraud Detection Pipeline                                                | Advanced               | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/09_fraud_detection_pipeline)                |
+| 10  | E-Commerce Order Tracker                                                | Advanced               | [PROJECT](https://github.com/djeada/Kafka-Notes/tree/main/projects/10_ecommerce_order_tracker)                 |
+
 ## Scripts
 
 The repository also includes a few standalone helper scripts in `scripts/` for common Kafka administration and monitoring tasks. Each script now accepts command-line arguments, so you can reuse them against your own brokers, topics, and consumer groups without editing the source.
