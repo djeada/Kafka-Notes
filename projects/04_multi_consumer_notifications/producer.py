@@ -43,7 +43,7 @@ SAMPLE_MESSAGES = [
     "You have a new follower.",
     "Scheduled maintenance tonight at 11 PM.",
     "Your report is ready to download.",
-    "Flash sale: 20%% off everything today!",
+    "Flash sale: 20% off everything today!",
 ]
 
 

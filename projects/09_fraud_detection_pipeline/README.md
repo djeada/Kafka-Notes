@@ -23,7 +23,7 @@ separate topic. An alert consumer reads and logs every alert for monitoring.
 
 | Rule | Description |
 |------|-------------|
-| **High Amount** | Transaction amount exceeds a configurable threshold (default 5 000) |
+| **High Amount** | Transaction amount exceeds a configurable threshold (default 5,000) |
 | **Rapid Transactions** | Same user sends ≥ 3 transactions within a 10-second window |
 | **Suspicious Location** | Transaction originates from a known suspicious location |
 
